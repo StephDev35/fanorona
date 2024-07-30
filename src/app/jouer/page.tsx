@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import Loaders from "@/components/Looaders";
-import { DndContext } from "@dnd-kit/core";
+import { DndContext,DragEndEvent  } from "@dnd-kit/core";
 import { Draggable } from "../../components/Draggable";
 import { Droppable } from "../../components/Droppable";
 import Imagewin from "../../../public/win.png";
@@ -43,27 +43,28 @@ const fireworksAnimation = `
       pointer-events: none;
     }
   `;
+  
 
 export default function Jouer() {
 
    
-  const [boules1, setBoules1] = useState([
+  const [boules1, setBoules1] = useState<Boule[]>([
     { id: 1, nom: "Boule 1", parent: null },
     { id: 2, nom: "Boule 2", parent: null },
     { id: 3, nom: "Boule 3", parent: null },
   ]);
-  const [boules2, setBoules2] = useState([
+  const [boules2, setBoules2] = useState<Boule[]>([
     { id: 4, nom: "Boule 4", parent: null },
     { id: 5, nom: "Boule 5", parent: null },
     { id: 6, nom: "Boule 6", parent: null },
   ]);
-  const [currentPlayer, setCurrentPlayer] = useState(1);
-  const [winner, setWinner] = useState(null);
-  const [allBoulesPlaced, setAllBoulesPlaced] = useState(false);
-  const [startTime, setStartTime] = useState(null);
-  const [elapsedTime, setElapsedTime] = useState("00:00");
+  const [currentPlayer, setCurrentPlayer] = useState<number>(1);
+  const [winner, setWinner] = useState<string | null>(null);
+  const [allBoulesPlaced, setAllBoulesPlaced] = useState<boolean>(false);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState<string>("00:00");
 
-  const timerRef = useRef(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const LesCases = [
     { id: 1, nom: "case 1" },
@@ -88,7 +89,12 @@ export default function Jouer() {
     [3, 5, 7],
   ];
 
-  const checkWinner = (boules) => {
+  interface Boule {
+    id: number;
+    nom: string;
+    parent: string | null;
+  }
+  const checkWinner = (boules : Boule[]) => {
     for (let combo of winningCombinations) {
       const [a, b, c] = combo;
       if (
@@ -102,21 +108,22 @@ export default function Jouer() {
     return false;
   };
 
-  const handleDragEnd = (event) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    const [type, id] = active.id.split("-");
+    const activeId = active.id as string; // Ensure active.id is treated as a string
+    const [type, id] = activeId.split("-");
     const bouleId = parseInt(id);
-
+  
     if (over && !winner) {
       const isOccupied =
         boules1.some((boule) => boule.parent === over.id) ||
         boules2.some((boule) => boule.parent === over.id);
-
+  
       if (!isOccupied) {
         if (type === "draggable1" && currentPlayer === 1) {
           setBoules1((prevBoules) => {
             const newBoules = prevBoules.map((boule) =>
-              boule.id === bouleId ? { ...boule, parent: over.id } : boule
+              boule.id === bouleId ? { ...boule, parent: String(over.id) } : boule
             );
             if (checkWinner(newBoules)) {
               setWinner("Player 1 (Blue)");
@@ -127,7 +134,7 @@ export default function Jouer() {
         } else if (type === "draggable2" && currentPlayer === 2) {
           setBoules2((prevBoules) => {
             const newBoules = prevBoules.map((boule) =>
-              boule.id === bouleId ? { ...boule, parent: over.id } : boule
+              boule.id === bouleId ? { ...boule, parent: String(over.id) } : boule
             );
             if (checkWinner(newBoules)) {
               setWinner("Player 2 (Green)");
@@ -139,26 +146,13 @@ export default function Jouer() {
       }
     }
   };
-
-  useEffect(() => {
-    const allBoulesPlaced =
-      boules1.every((boule) => boule.parent !== null) &&
-      boules2.every((boule) => boule.parent !== null);
-    if (allBoulesPlaced && !winner) {
-      setAllBoulesPlaced(true);
-      setTimeout(() => {
-        setBoules1(boules1.map((boule) => ({ ...boule, parent: null })));
-        setBoules2(boules2.map((boule) => ({ ...boule, parent: null })));
-        setCurrentPlayer(1);
-        setAllBoulesPlaced(false);
-        setStartTime(new Date());
-      }, 2000);
-    }
-  }, [boules1, boules2, winner]);
+  
 
   useEffect(() => {
     if (winner || allBoulesPlaced) {
-      clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     }
   }, [winner, allBoulesPlaced]);
 
@@ -166,7 +160,7 @@ export default function Jouer() {
     if (startTime) {
       timerRef.current = setInterval(() => {
         const now = new Date();
-        const seconds = Math.floor((now - startTime) / 1000);
+        const seconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
         const minutes = Math.floor(seconds / 60);
         const remainingSeconds = seconds % 60;
         setElapsedTime(
@@ -174,9 +168,13 @@ export default function Jouer() {
             .toString()
             .padStart(2, "0")}`
         );
-      }, 2000);
+      }, 1000); // Changed to 1000ms for more accurate timing
 
-      return () => clearInterval(timerRef.current);
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+      };
     }
   }, [startTime]);
 
@@ -197,7 +195,7 @@ export default function Jouer() {
     setStartTime(new Date());
   };
 
-  const getDraggable = (id, type) => {
+  const getDraggable = (id: number, type: string) => {
     return (
       <Draggable key={id} id={`${type}-${id}`}>
         <div
@@ -208,6 +206,7 @@ export default function Jouer() {
       </Draggable>
     );
   };
+  
 
   const remainingBoules1 = boules1.filter((boule) => boule.parent === null);
   const remainingBoules2 = boules2.filter((boule) => boule.parent === null);
@@ -224,7 +223,7 @@ export default function Jouer() {
           <h1>
             <span>Time: </span>{elapsedTime}
           </h1>
-          <Mode theme={theme} setTheme={setTheme} />
+          <Mode theme={theme || 'light'} setTheme={setTheme} />
         </div>
         <DndContext onDragEnd={handleDragEnd}>
           {winner && (
