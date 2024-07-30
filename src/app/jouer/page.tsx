@@ -1,4 +1,5 @@
 "use client";
+import type { Metadata } from "next";
 import React, { useState, useEffect, useRef } from "react";
 import Loaders from "@/components/Looaders";
 import { DndContext,DragEndEvent  } from "@dnd-kit/core";
