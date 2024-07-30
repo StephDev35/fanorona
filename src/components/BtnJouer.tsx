@@ -1,26 +1,26 @@
-import React, { useState, useRef, useEffect } from 'react'
-import Loaders from './Looaders'
-import { motion, useAnimation } from 'framer-motion'
-import Link from 'next/link'
+import React, { useState, useRef, useEffect } from 'react';
+import Loaders from './Looaders';
+import { motion, useAnimation } from 'framer-motion';
+import Link from 'next/link';
 
 interface Star {
-  id: number
-  x: number
-  y: number
-  size: number
-  speed: number
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  speed: number;
 }
 
 const BtnJouer: React.FC = () => {
-    const [isLoad, setisLoad] = useState("Jouer");
-  const buttonRef = useRef<HTMLButtonElement>(null)
-  const [stars, setStars] = useState<Star[]>([])
-  const controls = useAnimation()
+  const [isLoad, setisLoad] = useState<string | React.ReactElement>('Jouer');
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [stars, setStars] = useState<Star[]>([]);
+  const controls = useAnimation();
 
   useEffect(() => {
     const generateStars = () => {
       if (buttonRef.current) {
-        const { width, height } = buttonRef.current.getBoundingClientRect()
+        const { width, height } = buttonRef.current.getBoundingClientRect();
         setStars(
           Array.from({ length: 50 }, (_, i) => ({
             id: i,
@@ -28,21 +28,21 @@ const BtnJouer: React.FC = () => {
             y: Math.random() * height,
             size: Math.random() * 2 + 1,
             speed: Math.random() * 50 + 20,
-          })),
-        )
+          }))
+        );
       }
-    }
+    };
 
-    generateStars()
-    window.addEventListener('resize', generateStars)
-    return () => window.removeEventListener('resize', generateStars)
-  }, [])
+    generateStars();
+    window.addEventListener('resize', generateStars);
+    return () => window.removeEventListener('resize', generateStars);
+  }, []);
 
   return (
     <motion.button
-    onClick={() =>{
+      onClick={() => {
         setisLoad(<Loaders />);
-    }}
+      }}
       ref={buttonRef}
       className="text-lg w-40 h-16 relative overflow-hidden rounded-full border-2 border-yellow-400 bg-black px-8 py-2.5 font-semibold text-yellow-400 focus:outline-none"
       style={{
@@ -79,12 +79,12 @@ const BtnJouer: React.FC = () => {
         />
       ))}
       <span className="relative z-10">
-
-      <Link href="/jouer" className='text-2xl'>{isLoad}</Link>
-        
-        </span>
+        <Link href="/jouer" className="text-2xl">
+          {isLoad}
+        </Link>
+      </span>
     </motion.button>
-  )
-}
+  );
+};
 
 export default BtnJouer;
